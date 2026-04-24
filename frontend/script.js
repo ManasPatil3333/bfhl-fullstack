@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:3000/bfhl"; // change after deployment
+const API_URL = "https://bfhl-fullstack-omega.vercel.app/api/bfhl";
 
 async function submitData() {
 
