@@ -1,62 +1,83 @@
-body {
-    font-family: Arial, sans-serif;
-    background: #f4f6f9;
-    padding: 20px;
+const API_URL = "https://bfhl-fullstack-omega.vercel.app/api/bfhl";
+
+async function submitData() {
+
+    const input = document.getElementById("inputData").value;
+
+    let data;
+
+    try {
+        data = JSON.parse(input);
+    } catch {
+        alert("Invalid JSON format");
+        return;
+    }
+
+    try {
+        const res = await fetch(API_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ data })
+        });
+
+        const result = await res.json();
+        displayResult(result);
+
+    } catch (err) {
+        console.error(err);
+        alert("API Error: " + err.message);
+    }
 }
 
-.container {
-    max-width: 900px;
-    margin: auto;
-}
+function displayResult(result) {
 
-h1 {
-    text-align: center;
-    margin-bottom: 20px;
-}
+    const output = document.getElementById("output");
+    output.innerHTML = "";
 
-textarea {
-    width: 100%;
-    height: 120px;
-    padding: 12px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    font-size: 14px;
-}
+    // Hierarchies
+    result.hierarchies.forEach(h => {
+        const div = document.createElement("div");
+        div.className = "card";
 
-button {
-    padding: 10px 20px;
-    margin-top: 10px;
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-}
+        if (h.has_cycle) {
+            div.innerHTML = `<b style="color:red;">Cycle detected at root: ${h.root}</b>`;
+        } else {
+            div.innerHTML = `
+                <h3>Root: ${h.root}</h3>
+                <p><b>Depth:</b> ${h.depth}</p>
+                <pre>${JSON.stringify(h.tree, null, 2)}</pre>
+            `;
+        }
 
-button:hover {
-    background: #0056b3;
-}
+        output.appendChild(div);
+    });
 
-.card {
-    background: white;
-    padding: 15px;
-    margin-top: 15px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
+    // Summary
+    const summary = document.createElement("div");
+    summary.className = "card summary";
+    summary.innerHTML = `
+        <h3>Summary</h3>
+        <p>Total Trees: ${result.summary.total_trees}</p>
+        <p>Total Cycles: ${result.summary.total_cycles}</p>
+        <p>Largest Tree Root: ${result.summary.largest_tree_root}</p>
+    `;
+    output.appendChild(summary);
 
-pre {
-    background: #f1f1f1;
-    padding: 10px;
-    border-radius: 5px;
-    overflow-x: auto;
-}
+    // Invalid entries
+    if (result.invalid_entries.length) {
+        const invalid = document.createElement("div");
+        invalid.className = "card error";
+        invalid.innerHTML = `<b>Invalid Entries:</b> ${result.invalid_entries.join(", ")}`;
+        output.appendChild(invalid);
+    }
 
-.summary {
-    background: #e8f5e9;
-}
-
-.error {
-    background: #fdecea;
-    color: #b71c1c;
+    // Duplicate edges
+    if (result.duplicate_edges.length) {
+        const dup = document.createElement("div");
+        dup.className = "card error";
+        dup.innerHTML = `<b>Duplicate Edges:</b> ${result.duplicate_edges.join(", ")}`;
+        output.appendChild(dup);
+    }
 }
